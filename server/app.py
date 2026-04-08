@@ -37,19 +37,27 @@ def reset():
 
 def grade_response(response):
     if not response:
-        return 0.0
+        return 0.1  # never 0
 
     score = 0
     for kw in current_task["keywords"]:
         if kw.lower() in response.lower():
             score += 1
 
-    return min(score / len(current_task["keywords"]), 1.0)
+    raw_score = score / len(current_task["keywords"])
+
+    # force strict (0,1)
+    if raw_score <= 0:
+        return 0.1
+    elif raw_score >= 1:
+        return 0.9
+    else:
+        return raw_score
 
 @app.post("/step")
 def step(action: Action):
     reward = grade_response(action.content)
-    done = reward > 0.7
+    done = reward > 0.8
 
     return {
         "state": state_data,
@@ -61,8 +69,8 @@ def step(action: Action):
 def state():
     return state_data
 
-# REQUIRED
 def main():
     return app
+
 if __name__ == "__main__":
     main()
