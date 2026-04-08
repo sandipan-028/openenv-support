@@ -1,7 +1,18 @@
 import requests
 import os
+from openai import OpenAI
 
 SPACE_URL = os.getenv("SPACE_URL", "https://sandipan028-openenv-support.hf.space")
+
+# ✅ REQUIRED ENV
+API_BASE_URL = os.getenv("API_BASE_URL")
+API_KEY = os.getenv("API_KEY")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
+
+client = OpenAI(
+    base_url=API_BASE_URL,
+    api_key=API_KEY,
+)
 
 MAX_STEPS = 5
 
@@ -16,15 +27,20 @@ def main():
     try:
         state = requests.post(f"{SPACE_URL}/reset").json()
 
-        print("[START] task=support env=openenv model=rule-based")
+        print("[START] task=support env=openenv model=llm")
 
         done = False
 
         while not done and step_count < MAX_STEPS:
             step_count += 1
 
-            # Rule-based response (NO API)
-            text = "Please reset your password or contact support for refund or fix."
+            # ✅ LLM CALL (MANDATORY)
+            response = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=[{"role": "user", "content": state["ticket"]}],
+            )
+
+            text = response.choices[0].message.content
 
             action = {
                 "type": "respond",
