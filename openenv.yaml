@@ -1,0 +1,11 @@
+name: support-env
+description: customer support simulation environment
+
+actions:
+  - type: respond
+
+observation:
+  type: text
+
+reward:
+  range: [0.0, 1.0]
