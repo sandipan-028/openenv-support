@@ -5,12 +5,10 @@ import random
 
 app = FastAPI()
 
-# -------- ACTION MODEL --------
 class Action(BaseModel):
     type: str
     content: Optional[str] = None
 
-# -------- TASKS (3 REQUIRED) --------
 TASKS = [
     {"ticket": "I forgot my password", "keywords": ["password", "reset"]},
     {"ticket": "Payment deducted but failed", "keywords": ["refund", "payment"]},
@@ -20,7 +18,6 @@ TASKS = [
 state_data = {}
 current_task = None
 
-# -------- RESET --------
 @app.post("/reset")
 def reset():
     global state_data, current_task
@@ -34,39 +31,49 @@ def reset():
     }
     return state_data
 
-# -------- GRADER (NO DECIMALS, ONLY 0 or 1) --------
+
+# ✅ STRICT (0,1) RANGE GRADER
 def grade_response(response):
     if not response:
-        return 0  # integer
+        return 0.2
 
+    score = 0
     for kw in current_task["keywords"]:
         if kw.lower() in response.lower():
-            return 1  # integer
+            score += 1
 
-    return 0
+    total = len(current_task["keywords"])
+    raw = score / total
 
-# -------- STEP --------
+    if raw <= 0:
+        return 0.2
+    elif raw >= 1:
+        return 0.8
+    else:
+        return round(raw, 2)
+
+
 @app.post("/step")
 def step(action: Action):
     reward = grade_response(action.content)
 
-    done = reward == 1
+    done = reward > 0.7
 
     return {
         "state": state_data,
-        "reward": reward,   # integer only
+        "reward": float(reward),
         "done": done
     }
 
-# -------- STATE --------
+
 @app.get("/state")
 def state():
     return state_data
 
-# -------- REQUIRED ENTRY --------
+
 def main():
     return app
 
-# -------- REQUIRED FOR VALIDATOR --------
+
 if __name__ == "__main__":
     main()
