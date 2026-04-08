@@ -1,4 +1,17 @@
+import os
 import requests
+from openai import OpenAI
+
+# ✅ REQUIRED ENV VARIABLES
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+API_KEY = os.getenv("HF_TOKEN")
+
+# ✅ OpenAI Client (MANDATORY)
+client = OpenAI(
+    base_url=API_BASE_URL,
+    api_key=API_KEY,
+)
 
 SPACE_URL = "https://sandipan028-openenv-support.hf.space"
 
@@ -8,22 +21,35 @@ def run_episode():
     rewards = []
     success = False
 
-    print("[START] task=support env=openenv model=rule-based")
+    print(f"[START] task=support env=openenv model={MODEL_NAME}")
 
     state = requests.post(f"{SPACE_URL}/reset").json()
 
     for step in range(1, MAX_STEPS + 1):
+
+        # ✅ LLM CALL (MANDATORY)
+        completion = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": "You are a helpful support agent."},
+                {"role": "user", "content": state["ticket"]}
+            ],
+            temperature=0.5,
+        )
+
+        action_text = completion.choices[0].message.content
+
         action = "respond"
 
         response = requests.post(
             f"{SPACE_URL}/step",
-            json={"type": "respond", "content": "Please reset your password"}
+            json={"type": action, "content": action_text}
         ).json()
 
         reward = response.get("reward", 0.2)
         done = response.get("done", False)
 
-        # ✅ CLAMP (VERY IMPORTANT)
+        # ✅ STRICT RANGE FIX
         if reward <= 0:
             reward = 0.2
         elif reward >= 1:
