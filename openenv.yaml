@@ -1,5 +1,30 @@
 name: support-env
-description: customer support simulation environment
+description: Customer support simulation environment
+
+tasks:
+  - id: password_reset
+    description: Handle password reset issue
+    grader:
+      type: keyword
+      keywords: ["password", "reset"]
+      min_score: 0.1
+      max_score: 0.9
+
+  - id: payment_issue
+    description: Handle payment failure issue
+    grader:
+      type: keyword
+      keywords: ["refund", "payment"]
+      min_score: 0.1
+      max_score: 0.9
+
+  - id: app_crash
+    description: Handle app crash issue
+    grader:
+      type: keyword
+      keywords: ["android", "fix"]
+      min_score: 0.1
+      max_score: 0.9
 
 actions:
   - type: respond
@@ -8,4 +33,4 @@ observation:
   type: text
 
 reward:
-  range: [0.0, 1.0]
+  range: [0.1, 0.9]
