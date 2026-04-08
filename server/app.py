@@ -9,21 +9,36 @@ class Action(BaseModel):
     type: str
     content: Optional[str] = None
 
-TASKS = [
-    {"ticket": "I forgot my password", "keywords": ["password", "reset"]},
-    {"ticket": "Payment deducted but failed", "keywords": ["refund", "payment"]},
-    {"ticket": "App crashes on Android", "keywords": ["android", "fix"]}
-]
+# ✅ EXPLICIT TASKS (DETECTED BY VALIDATOR)
+TASKS = {
+    "password_reset": {
+        "ticket": "I forgot my password",
+        "keywords": ["password", "reset"]
+    },
+    "payment_issue": {
+        "ticket": "Payment deducted but failed",
+        "keywords": ["refund", "payment"]
+    },
+    "app_crash": {
+        "ticket": "App crashes on Android",
+        "keywords": ["android", "fix"]
+    }
+}
 
 state_data = {}
 current_task = None
 
+
+# ✅ RESET
 @app.post("/reset")
 def reset():
     global state_data, current_task
-    current_task = random.choice(TASKS)
+
+    task_name = random.choice(list(TASKS.keys()))
+    current_task = TASKS[task_name]
 
     state_data = {
+        "task": task_name,   # IMPORTANT
         "ticket": current_task["ticket"],
         "history": [],
         "retrieved_docs": [],
@@ -32,18 +47,19 @@ def reset():
     return state_data
 
 
-# ✅ STRICT (0,1) RANGE GRADER
+# ✅ GRADER (STRICT RANGE 0 < r < 1)
 def grade_response(response):
     if not response:
         return 0.2
 
+    keywords = current_task["keywords"]
+
     score = 0
-    for kw in current_task["keywords"]:
+    for kw in keywords:
         if kw.lower() in response.lower():
             score += 1
 
-    total = len(current_task["keywords"])
-    raw = score / total
+    raw = score / len(keywords)
 
     if raw <= 0:
         return 0.2
@@ -53,10 +69,10 @@ def grade_response(response):
         return round(raw, 2)
 
 
+# ✅ STEP
 @app.post("/step")
 def step(action: Action):
     reward = grade_response(action.content)
-
     done = reward > 0.7
 
     return {
@@ -66,14 +82,17 @@ def step(action: Action):
     }
 
 
+# ✅ STATE
 @app.get("/state")
 def state():
     return state_data
 
 
+# ✅ REQUIRED ENTRY POINT
 def main():
     return app
 
 
+# ✅ REQUIRED FOR VALIDATOR
 if __name__ == "__main__":
     main()
