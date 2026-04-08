@@ -5,11 +5,12 @@ import random
 
 app = FastAPI()
 
+# -------- ACTION MODEL --------
 class Action(BaseModel):
     type: str
     content: Optional[str] = None
 
-# 3 REQUIRED TASKS
+# -------- TASKS (3 REQUIRED) --------
 TASKS = [
     {"ticket": "I forgot my password", "keywords": ["password", "reset"]},
     {"ticket": "Payment deducted but failed", "keywords": ["refund", "payment"]},
@@ -19,10 +20,7 @@ TASKS = [
 state_data = {}
 current_task = None
 
-@app.get("/")
-def home():
-    return {"status": "running"}
-
+# -------- RESET --------
 @app.post("/reset")
 def reset():
     global state_data, current_task
@@ -36,49 +34,39 @@ def reset():
     }
     return state_data
 
-
-# 🔥 FINAL BULLETPROOF GRADER
+# -------- GRADER (NO DECIMALS, ONLY 0 or 1) --------
 def grade_response(response):
     if not response:
-        raw_score = 0.0
-    else:
-        score = 0
-        for kw in current_task["keywords"]:
-            if kw.lower() in response.lower():
-                score += 1
+        return 0  # integer
 
-        raw_score = score / len(current_task["keywords"])
+    for kw in current_task["keywords"]:
+        if kw.lower() in response.lower():
+            return 1  # integer
 
-    # FORCE STRICT RANGE (0,1)
-    safe_score = 0.05 + (0.90 * raw_score)
+    return 0
 
-    return float(safe_score)
-
-
+# -------- STEP --------
 @app.post("/step")
 def step(action: Action):
     reward = grade_response(action.content)
 
-    # ensure completion but avoid 1.0 edge
-    done = reward > 0.9
+    done = reward == 1
 
     return {
         "state": state_data,
-        "reward": reward,
+        "reward": reward,   # integer only
         "done": done
     }
 
-
+# -------- STATE --------
 @app.get("/state")
 def state():
     return state_data
 
-
-# REQUIRED ENTRY POINT
+# -------- REQUIRED ENTRY --------
 def main():
     return app
 
-
-# REQUIRED FOR VALIDATOR
+# -------- REQUIRED FOR VALIDATOR --------
 if __name__ == "__main__":
     main()
