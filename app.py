@@ -18,6 +18,10 @@ TASKS = [
 state_data = {}
 current_task = None
 
+@app.get("/")
+def home():
+    return {"status": "running"}
+
 @app.post("/reset")
 def reset():
     global state_data, current_task
@@ -44,8 +48,6 @@ def grade_response(response):
 
 @app.post("/step")
 def step(action: Action):
-    global state_data
-
     reward = grade_response(action.content)
     done = reward > 0.7
 
@@ -59,6 +61,6 @@ def step(action: Action):
 def state():
     return state_data
 
-# ✅ REQUIRED for validator
+# REQUIRED
 def main():
     return app
